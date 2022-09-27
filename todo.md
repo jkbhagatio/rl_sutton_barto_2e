@@ -1,5 +1,5 @@
 - Chapter 1
 
-  - Code up tic-tac-toe and connect4 RL environments + agents. (in relation to question 1.3)
+  - Code up tic-tac-toe and connect4 RL environments + agents. (in relation to questions 1.1, 1.3, 1.4)
 
-    - code up 1.4
+  - Code up petroleum refinery operation in 1.2 as both an RL and Control task, see how they differ?
