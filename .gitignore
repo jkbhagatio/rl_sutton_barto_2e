@@ -1,0 +1,17 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+
+# Distribution / packaging
+*.egg-info/
+*.egg
+
+# IDE
+.vscode/*
+*.code-workspace
+.idea/
+**/*.ipynb_checkpoints
+**/*checkpoint.ipynb
+scratch/
+scratch*.py
+# misc
+log*.txt
