@@ -9,4 +9,5 @@ updates:
     directory: "/" # Location of package manifests
     schedule:
       interval: "monthly"
-    commit-message: "dependabot: pip"
+    commit-message: 
+      prefix: "dependabot: pip"
