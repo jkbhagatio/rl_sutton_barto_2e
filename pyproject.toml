@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=62.0", "wheel>=0.37"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rl2e"
+version = "0.1.0"
+requires-python = ">=3.10.0"
+description = "Notes and Exercises for Reinforcement Learning 2e by Sutton and Barto."
+authors = [
+  { name = "Jai Bhagat", email = "jkbhagatio@gmail.com" },
+]
+license = { file = "LICENSE" }
+readme = "README.md"
+
+[tool.black]
+line-length = 88
+color = true
+extend-exclude = '''
+/(
+  # entries go like this: `| <dir_or_file>
+)/
+'''
+
+[tool.flake8]
+max-line-length = 88
+# Ignore the following errors and warnings:
+#     - whitespace after '(' (E201)
+#     - whitespace before ')' (E202)
+#     - whitespace before ':') (E203)
+#     - assigning to a lambda expression (E371)
+#     - linebreaking before a binary operator (W503)
+#     - multiple statments on one line separated by ';' (E702)
+extend-ignore = ["E201", "E202", "E203", "E731", "W503", "E702"]
+# Ignore config setting files for git, github, intellij, vscode.
+extend-exclude = [".github", ".idea", ".vscode"]
+
+[tool.mypy]
+
+[tool.bandit]
+
+[tool.pytest.ini_options]
+
+[tool.isort]
+profile = "black"
+color_output = true

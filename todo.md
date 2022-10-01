@@ -21,22 +21,11 @@ run_agents(r_all=r_all, action_policy=["E-greedy", "UCB", "gradient"], action_va
 
 ___
 
-def set_bandit_task(K, )
-
-def run_bandit_agents(action_policy=["E-greedy", "UCB", "gradient"], action_value=["sample-average", "weighted-average"]", unbiased_stepsize=["True", "False"])
-
-def plot_reward_dists()
-
-def plot_running_avg_reward()
-
-def plot_optimal_action_pct()
-
-
-- installable package & instructions
-  - dependabot github enable and config
-  - use: black, flake8, isort, mypy, pytest, pytest-cov, pre-commit, bandit
-    - pyproject.toml (black, flake8, isort)
-    - use all in github actions CI
-    - add badges for build_env_run_tests and codecov
+- installable package & instructions [x]
+- GitHub security and analysis checks: dependabot, CodeQL code scanning [x]
+- python dev config packages use: black, flake8, mypy, bandit, pytest, pytest-cov, isort, pre-commit
+- pyproject.toml (black, flake8, mypy, bandit, pytest, isort)
+- github actions CI: (flake8, bandit, mypy, pytest --cov, codecov, )
+- add badges for build_env_run_tests and codecov
 
     
