@@ -22,6 +22,10 @@ extend-exclude = '''
 )/
 '''
 
+[tool.isort]
+profile = "black"
+color_output = true
+
 [tool.flake8]
 max-line-length = 88
 # Ignore the following errors and warnings:
@@ -30,17 +34,16 @@ max-line-length = 88
 #     - whitespace before ':') (E203)
 #     - assigning to a lambda expression (E371)
 #     - linebreaking before a binary operator (W503)
-#     - multiple statments on one line separated by ';' (E702)
-extend-ignore = ["E201", "E202", "E203", "E731", "W503", "E702"]
+extend-ignore = ["E201", "E202", "E203", "E731", "W503"]
 # Ignore config setting files for git, github, intellij, vscode.
 extend-exclude = [".github", ".idea", ".vscode"]
+docstring-convention = "google"
 
 [tool.mypy]
+ignore_missing_imports = true
 
 [tool.bandit]
 
 [tool.pytest.ini_options]
 
-[tool.isort]
-profile = "black"
-color_output = true
+[tool.tox]

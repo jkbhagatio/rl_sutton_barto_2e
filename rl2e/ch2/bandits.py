@@ -1,20 +1,19 @@
 from typing import Callable, Union  # Callable, Mapping, Sequence, Union, Annotated
 
 import numpy as np
-from numpy.random import normal, binomial, choice
 import pandas as pd
-
-from matplotlib import pyplot as plt
 import seaborn as sns
+from matplotlib import pyplot as plt
+from numpy.random import binomial, choice, normal
 
 
 def set_bandit_task(
     k: int = 10,
     n_steps: int = 5000,
     reward_dist: Callable = normal,
-    dist_loc: np.array = None,
-    dist_scale: np.array = None,
-):
+    dist_loc: np.ndarray = None,
+    dist_scale: np.ndarray = None,
+) -> np.ndarray:
     """
     Sets up a bandit task by generating rewards for each arm for each step.
 
@@ -46,10 +45,10 @@ def set_bandit_task(
 
 
 def run_agent(
-    reward_data: np.array,
+    reward_data: np.ndarray,
     action_policy: str,
     action_value: str,
-    alpha: float = None,
+    alpha: float = 0.1,
     ucb: bool = False,
     unbiased_stepsize: bool = False,
     e: float = 0.1,
@@ -91,9 +90,9 @@ def run_agent(
         h = np.zeros(k).astype(float)
         policy = np.zeros(k).astype(float)
         a = choice(k)
-        r = 0
+        r = 0.
     if unbiased_stepsize:  # set params if using trick
-        sigma = 0
+        sigma = 0.
         beta = alpha
 
     # For each step: action selection, reward, update action-value estimate and
@@ -132,15 +131,15 @@ def run_agent(
             alpha = beta / sigma
             sigma += beta * (1 - sigma)
         q_a[a] += alpha * (r - q_a[a])
-        return r_all, a_all
+    return r_all, a_all
 
 
-def get_running_avg_reward(reward: np.array, step_win: int) -> np.array:
+def get_running_avg_reward(reward: np.ndarray, step_win: int) -> np.ndarray:
     """Computes running average reward from a reward vector and step window"""
     return np.convolve(reward, np.ones((step_win,)), mode="same") / step_win
 
 
-def get_optimal_action_pct(reward_data: np.array, action: np.array) -> np.array:
+def get_optimal_action_pct(reward_data: np.ndarray, action: np.ndarray) -> np.ndarray:
     """Computes % optimal action taken at each time step given reward data matrix
     [n_steps X n_arms] and action vector"""
     oa = np.argmax(np.mean(reward_data, axis=0))
@@ -148,11 +147,11 @@ def get_optimal_action_pct(reward_data: np.array, action: np.array) -> np.array:
     return np.cumsum(oa_mask) / np.arange(reward_data.shape[0])
 
 
-def plot_reward_dists(reward_data: Union[np.array, pd.DataFrame]) -> plt.axes:
+def plot_reward_dists(reward_data: Union[np.ndarray, pd.DataFrame]) -> plt.axes:
     """Plots reward distributions and returns axis handle given reward data
     [n_steps X n_arms]"""
     reward_data = (
-        pd.DataFrame(reward_data) if type(reward_data) is np.array else reward_data
+        pd.DataFrame(reward_data) if type(reward_data) is np.ndarray else reward_data
     )
     k = reward_data.shape[1]  # number of arms
     ax = sns.violinplot(data=reward_data, scale="count")
