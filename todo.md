@@ -23,10 +23,10 @@ ___
 
 - installable package & instructions [x]
 - GitHub security and analysis checks: dependabot, CodeQL code scanning [x]
-- python dev config packages: black[x], isort[x], flake8[x], flake8-docstrings[x], pydocstyle[x] mypy[x], bandit[x], pytest, pytest-cov, pre-commit, (tox)
-- pyproject.toml: black[x], isort[x], flake8[x], mypy[x], bandit[x], pytest, tox
-- pre-commit: black, isort, flake8, mypy, bandit, pytest
-- github actions CI: (flake8, bandit, mypy, pytest --cov, codecov, )
+- python dev config packages: black[x], isort[x], flake8[x] (flake8-docstrings, pydocstyle), pyupgrade, mypy[x], bandit[x], pytest (pytest-cov), pre-commit, {tox?}
+- pyproject.toml: black[x], isort[x], flake8[x], pyupgrade, mypy[x], bandit[x], pytest, tox
+- pre-commit: black, isort, pyupgrade, flake8, mypy, bandit, pytest
+- github actions CI: (flake8, mypy, bandit, pytest --cov, codecov, )
 - add badges for build_env_run_tests and codecov
 
     

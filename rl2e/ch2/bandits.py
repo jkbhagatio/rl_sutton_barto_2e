@@ -1,3 +1,5 @@
+"""Sets up and runs bandit tasks."""
+
 from typing import Callable, Union  # Callable, Mapping, Sequence, Union, Annotated
 
 import numpy as np
@@ -8,17 +10,16 @@ from numpy.random import binomial, choice, normal
 
 
 def set_bandit_task(
-    k: int = 10,
+    n_arms: int = 10,
     n_steps: int = 5000,
     reward_dist: Callable = normal,
     dist_loc: np.ndarray = None,
     dist_scale: np.ndarray = None,
 ) -> np.ndarray:
-    """
-    Sets up a bandit task by generating rewards for each arm for each step.
+    """Sets up a bandit task by generating reward for each arm for each step.
 
     Args:
-        k: Number of bandit arms.
+        n_arms: Number of bandit arms.
         n_steps: Number of time steps.
         reward_dist: Distribution from which to draw the rewards.
         dist_loc: The location parameter for the reward distribution. If None, this is
@@ -33,44 +34,43 @@ def set_bandit_task(
     """
     b_means, b_vars = dist_loc, dist_scale
     if b_means is None:
-        b_means = reward_dist(loc=0, scale=1, size=k)
+        b_means = np.random.random_sample((10,))
     if b_vars is None:
-        b_vars = reward_dist(loc=0, scale=1, size=k)
+        b_vars = np.random.random_sample((10,))
     return np.array(
         [
             reward_dist(loc=b_means[arm], scale=b_vars[arm], size=n_steps)
-            for arm in range(k)
+            for arm in range(n_arms)
         ]
     ).T
 
 
-def run_agent(
+def run_bandit_agent(
     reward_data: np.ndarray,
-    action_policy: str,
-    action_value: str,
+    action_policy: str = "e-greedy",
+    e_val: float = 0.1,
+    action_value: str = "sample-average",
+    initial_values: np.ndarray = None,
     alpha: float = 0.1,
-    ucb: bool = False,
     unbiased_stepsize: bool = False,
-    e: float = 0.1,
-    c: float = 2,
+    ucb: bool = False,
+    c_val: float = 2,
 ) -> tuple:
-    """
-    Runs bandit agents for some task given: 1) reward data for each arm for each step;
-    2) the agent's action policy; 3) the agent's action values; 4) a flag for using the
-    unbiased stepsize trick for value updates
+    """Runs action bandit agent specced by some parameters, given reward data.
 
     Args:
-        reward_data: The rewards array [n_steps X n_arms]
+        reward_data: The rewards array [n_steps X n_arms] (see `set_bandit_task()`)
         action_policy: The action policy to use. Either "e-greedy" or "gradient"
+        e_val: The epsilon value to use (only used if "e-greedy" action policy)
         action_value: The action value estimate to use. Either "sample-average" or
             "weighted-average"
+        initial_values: The initial action-values (if None, then set to 0 for each arm)
         alpha: The alpha value to use if using "weighted-average" for action value.
+        unbiased_stepsize: If True, use unbiased stepsize trick with weighted-average
+            action-value.
         ucb: If True, use upper-confidence-bound action selection for non-greedy actions
             with e-greedy action policy.
-        unbiased_stepsize: If True, use unbiased stepesize trick with weighted-average
-            action-value.
-        e: The epsilon value to use (only used if "e_greedy" action policy)
-        c: The c value to use (only used if "ucb" action policy)
+        c_val: The c_val value to use (only used if "ucb" is True)
 
     Returns:
         tuple of two 1-d arrays: reward and action selection at each step
@@ -79,84 +79,92 @@ def run_agent(
     n_steps = reward_data.shape[0]
     a_all = np.zeros(n_steps)  # action selected vector
     r_all = np.zeros(n_steps)  # reward vector
-    k = reward_data.shape[1]  # number of arms
-    all_actions = np.arange(k)  # all possible actions
-    q_a = np.zeros(k)  # action-value estimate vector
-    n_a = np.zeros(k)  # action selected counter vector
-    n_a += 0.001 if ucb else n_a
+    n_arms = reward_data.shape[1]  # number of arms
+    all_actions = np.arange(n_arms)  # all possible actions
+    q_a = np.zeros(n_arms) if initial_values is None else initial_values  # action-vals
+    q_a_all = np.zeros_like(reward_data)
+    n_a = np.zeros(n_arms)  # action selected counter vector
+    n_a += 0.001 if ucb else n_a  # set to small non-zero val for division
     if action_policy == "e-greedy":  # greedy action mask
-        greedy = binomial(1, (1 - e), n_steps)
+        greedy = binomial(1, (1 - e_val), n_steps)
     if action_policy == "gradient":
-        h = np.zeros(k).astype(float)
-        policy = np.zeros(k).astype(float)
-        a = choice(k)
-        r = 0.
+        h_val = np.zeros(n_arms).astype(float)
+        action = choice(n_arms)  # current action
+        reward = 0.0  # current reward
     if unbiased_stepsize:  # set params if using trick
-        sigma = 0.
-        beta = alpha
+        beta = sigma = alpha
 
-    # For each step: action selection, reward, update action-value estimate and
-    # action selected counter.
+    # For each step: take action and get reward + update action-value estimate.
     for step in range(n_steps):
-        # Action selection.
+        # Take action.
         if action_policy == "e-greedy":
             # find greedy action, accounting for possible multiple optimal actions
             greedy_actions = np.argwhere(q_a == np.max(q_a))
-            a = int(greedy_actions[choice(len(greedy_actions))])
+            action = int(greedy_actions[choice(len(greedy_actions))])
             # choose randomly from all other actions
             if not greedy[step]:
-                other_actions = all_actions[all_actions != a]
+                other_actions = all_actions[all_actions != action]
                 if not ucb:
-                    a = int(other_actions[choice(len(other_actions))])
+                    action = int(other_actions[choice(len(other_actions))])
                 else:
                     ucb_weights = q_a[other_actions] + (
-                        c * (np.log(step) / n_a[other_actions])
+                        c_val * (np.log(step) / n_a[other_actions])
                     )
                     ucb_actions = np.argwhere(ucb_weights == np.max(ucb_weights))
-                    a = int(ucb_actions[choice(len(ucb_actions))])
+                    action = int(ucb_actions[choice(len(ucb_actions))])
         elif action_policy == "gradient":
-            policy = np.exp(h) / np.sum(np.exp(h))
-            h[a] += alpha * (r - np.mean(r_all[:step])) * (1 - policy[a])
-            other_actions = all_actions[all_actions != a]
-            h[other_actions] -= (
-                alpha * (r - np.mean(r_all[:step])) * policy[other_actions]
-            )
-        a_all[step] = a
-        # Get reward.
-        r_all[step] = r = reward_data[step, a]
-        # Update action-value estimate and action selected counter.
-        n_a[a] += 1
-        alpha = (1 / n_a[a]) if action_value == "sample-average" else alpha
+            preferred_actions = np.argwhere(h_val == np.max(h_val))
+            action = int(preferred_actions[choice(len(preferred_actions))])
+        # Get reward and update action-value.
+        a_all[step] = action
+        r_all[step] = reward = reward_data[step, action]
+        if action_value == "sample-average":
+            n_a[action] += 1
+            alpha = 1 / n_a[action]
         if unbiased_stepsize:
             alpha = beta / sigma
             sigma += beta * (1 - sigma)
-        q_a[a] += alpha * (r - q_a[a])
-    return r_all, a_all
+        if action_policy == "e-greedy":
+            q_a[action] += alpha * (reward - q_a[action])
+            q_a_all[step, action] = q_a[action]
+        elif action_policy == "gradient":
+            policy = np.exp(h_val) / np.sum(np.exp(h_val))
+            h_val[action] += (
+                alpha * (reward - np.mean(r_all[: (step + 1)])) * (1 - policy[action])
+            )
+            other_actions = all_actions[all_actions != action]
+            h_val[other_actions] -= (
+                alpha * (reward - np.mean(r_all[: (step + 1)])) * policy[other_actions]
+            )
+            q_a_all[step, :] = h_val
+
+    return r_all, a_all, q_a_all
 
 
 def get_running_avg_reward(reward: np.ndarray, step_win: int) -> np.ndarray:
-    """Computes running average reward from a reward vector and step window"""
+    """Computes running average reward from a reward vector and step window."""
     return np.convolve(reward, np.ones((step_win,)), mode="same") / step_win
 
 
 def get_optimal_action_pct(reward_data: np.ndarray, action: np.ndarray) -> np.ndarray:
-    """Computes % optimal action taken at each time step given reward data matrix
-    [n_steps X n_arms] and action vector"""
+    """Computes % optimal action taken at each time step.
+
+    From a reward data matrix [n_steps X n_arms] and action selected vector [n_steps].
+    """
     oa = np.argmax(np.mean(reward_data, axis=0))
     oa_mask = action == oa
-    return np.cumsum(oa_mask) / np.arange(reward_data.shape[0])
+    return np.cumsum(oa_mask) / np.arange(start=1, stop=(reward_data.shape[0] + 1))
 
 
 def plot_reward_dists(reward_data: Union[np.ndarray, pd.DataFrame]) -> plt.axes:
-    """Plots reward distributions and returns axis handle given reward data
-    [n_steps X n_arms]"""
+    """Plots reward distributions given reward data matrix [n_steps X n_arms]."""
     reward_data = (
         pd.DataFrame(reward_data) if type(reward_data) is np.ndarray else reward_data
     )
-    k = reward_data.shape[1]  # number of arms
+    n_arms = reward_data.shape[1]  # number of arms
     ax = sns.violinplot(data=reward_data, scale="count")
     ax = sns.stripplot(
-        data=reward_data, jitter=True, zorder=1, palette=["0.7"] * k, ax=ax
+        data=reward_data, jitter=True, zorder=1, palette=["0.7"] * n_arms, ax=ax
     )
-    ax.set_title(f"Reward Distributions for each arm of {k}-armed bandit")
+    ax.set_title(f"Reward Distributions for each arm of {n_arms}-armed bandit")
     return ax
