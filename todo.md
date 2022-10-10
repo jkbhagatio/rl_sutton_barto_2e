@@ -19,6 +19,7 @@
 
 run_agents(r_all=r_all, action_policy=["E-greedy", "UCB", "gradient"], action_value=)
 
+class where you can save each run outcome (and params) as a row in a pandas df
 ___
 
 - installable package & instructions [x]
@@ -29,4 +30,9 @@ ___
 - github actions CI: (flake8, mypy, bandit, pytest --cov, codecov, )
 - add badges for build_env_run_tests and codecov
 
-    
+- RL frameworks/libraries
+  - Acme
+  - RL_Coach
+
+- RL environments:
+  - OpenAI Gym

@@ -15,7 +15,7 @@ r_all2, a_all2, q_all2 = bandits.run_bandit_agent(
     action_value="weighted-average",
     unbiased_stepsize=True,
 )
-oa_pct2 = bandits.get_optimal_action_pct(reward_data, a_all2)
+oa_pct2 = bandits.calc_optimal_action_pct(reward_data, a_all2)
 oa_pct2
 
 # ___
