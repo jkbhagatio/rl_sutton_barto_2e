@@ -10,8 +10,6 @@ from matplotlib import pyplot as plt
 from numpy import typing as npt
 from numpy.random import binomial, choice, normal
 
-import warnings
-
 
 @dataclass
 class Bandit:
@@ -43,11 +41,11 @@ class Bandit:
 
     n_arms: int = 10
     n_steps: int = 5000
-    reward_data: npt.NDArray[float] = field(init=False, repr=False)
+    reward_data: npt.NDArray[np.float64] = field(init=False, repr=False)
     action_policy: str = "e-greedy"
     e_val: float = 0.1
     action_value_est: str = "sample-average"
-    initial_action_value: npt.NDArray[float] = field(init=False)
+    initial_action_value: npt.NDArray[np.float64] = field(init=False)
     alpha: float = 0.1
     use_unbiased_stepsize: bool = False
     use_ucb: bool = False
@@ -59,9 +57,9 @@ class Bandit:
     __outcome: pd.DataFrame = field(init=False, repr=False)  # saved run outcomes
     # Action-taken and reward-received vectors, and action values matrix, for all
     # timesteps for the most recent run.
-    __actions: npt.NDArray[int] = field(init=False, repr=False)
-    __rewards: npt.NDArray[float] = field(init=False, repr=False)
-    __action_values: npt.NDArray[float] = field(init=False, repr=False)
+    __actions: npt.NDArray[np.int_] = field(init=False, repr=False)
+    __rewards: npt.NDArray[np.float64] = field(init=False, repr=False)
+    __action_values: npt.NDArray[np.float64] = field(init=False, repr=False)
 
     def __post_init__(self):
         """Initializes some dependent attributes."""
@@ -75,17 +73,13 @@ class Bandit:
             "pct_optimal_action",
         ]
         self.__outcome = pd.DataFrame(columns=columns)
-        # dtypes = [int, int, str, float, str, float, float, bool, bool, float,
-        #           int, float, int, float, float, float, float]
-        # schema = dict(zip(columns, dtypes))
-        # self.__outcome = pd.DataFrame(columns=schema.keys()).astype(schema)
         self.initial_action_value = np.zeros(self.n_arms)
 
     def gen_reward_data(
         self,
         reward_dist: Union[Callable, List[Callable]] = normal,
-        loc: npt.NDArray[float] = None,
-        scale: npt.NDArray[float] = None,
+        loc: npt.NDArray[np.float64] = None,
+        scale: npt.NDArray[np.float64] = None,
     ):
         """Generates reward data for each arm for each step.
 
@@ -103,7 +97,7 @@ class Bandit:
         if scale is None:
             scale = np.random.random_sample((self.n_arms,))
         if type(reward_dist) is not list:
-            reward_dist = [reward_dist] * self.n_arms
+            reward_dist = [reward_dist] * self.n_arms  # type: ignore
         self.reward_data = np.array(
             [
                 reward_dist[arm](loc=loc[arm], scale=scale[arm], size=self.n_steps)
@@ -144,8 +138,7 @@ class Bandit:
                         action = int(other_actions[choice(len(other_actions))])
                     else:
                         ucb_weights = q_a[other_actions] + (
-                            self.c_val
-                            * np.sqrt(np.log(step + 1) / n_a[other_actions])
+                            self.c_val * np.sqrt(np.log(step + 1) / n_a[other_actions])
                         )
                         ucb_actions = np.argwhere(ucb_weights == np.max(ucb_weights))
                         action = int(other_actions[choice(len(ucb_actions))])
@@ -232,9 +225,8 @@ class Bandit:
 
 def plot_reward_dists(reward_data: Union[np.ndarray, pd.DataFrame]) -> plt.axes:
     """Plots reward distributions given reward data matrix [n_steps X n_arms]."""
-    reward_data = (
-        pd.DataFrame(reward_data) if type(reward_data) is np.ndarray else reward_data
-    )
+    if type(reward_data) is np.ndarray:
+        reward_data = pd.DataFrame(reward_data)
     n_arms = reward_data.shape[1]  # number of arms
     ax = sns.violinplot(data=reward_data, scale="count")
     ax = sns.stripplot(

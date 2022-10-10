@@ -24,8 +24,8 @@ ___
 
 - installable package & instructions [x]
 - GitHub security and analysis checks: dependabot, CodeQL code scanning [x]
-- python dev config packages: black[x], isort[x], flake8[x] (flake8-docstrings, pydocstyle), pyupgrade, mypy[x], bandit[x], pytest (pytest-cov), pre-commit, {tox?}
-- pyproject.toml: black[x], isort[x], flake8[x], pyupgrade, mypy[x], bandit[x], pytest, tox
+- python dev config packages: black[x], isort[x], flake8[x] (flake8-docstrings, pydocstyle)--cov-report=html:./tests/test_coverage/test_coverage_report_html, pyupgrade[x], mypy[x], bandit[x], pytest (pytest-cov)[x], pre-commit[x], {tox?}
+- pyproject.toml: black[x], isort[x], flake8[x], mypy[x], bandit[x], pytest[x], {tox?}
 - pre-commit: black, isort, pyupgrade, flake8, mypy, bandit, pytest
 - github actions CI: (flake8, mypy, bandit, pytest --cov, codecov, )
 - add badges for build_env_run_tests and codecov
@@ -36,3 +36,9 @@ ___
 
 - RL environments:
   - OpenAI Gym
+
+
+To test:
+  
+  - test Bandit creation and running of all methods with default values.
+  - test Bandit (with n:arms = 5 and n:steps = 1000) running with mix of params

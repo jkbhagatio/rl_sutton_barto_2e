@@ -1,5 +1,8 @@
 [build-system]
-requires = ["setuptools>=62.0", "wheel>=0.37"]
+requires = [
+  "setuptools>=62.0",
+  "wheel>=0.37"
+]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -18,7 +21,7 @@ line-length = 88
 color = true
 extend-exclude = '''
 /(
-  # entries go like this: `| <dir_or_file>
+  # entries go like this: `| <dir_or_file>`
 )/
 '''
 
@@ -34,9 +37,18 @@ max-line-length = 88
 #     - whitespace before ':') (E203)
 #     - assigning to a lambda expression (E371)
 #     - linebreaking before a binary operator (W503)
-extend-ignore = ["E201", "E202", "E203", "E731", "W503"]
-# Ignore config setting files for git, github, intellij, vscode.
-extend-exclude = [".github", ".idea", ".vscode"]
+extend-ignore = [
+  "E201",  # whitespace after '('
+  "E202",  # whitespace before ')'
+  "E203",  # whitespace before ':')
+  "E731",  # assigning to a lambda expression
+  "W503",  # linebreaking before a binary operator
+]
+extend-exclude = [
+  ".github",
+  ".idea",
+  ".vscode"
+]
 docstring-convention = "google"
 
 [tool.mypy]
@@ -45,5 +57,6 @@ ignore_missing_imports = true
 [tool.bandit]
 
 [tool.pytest.ini_options]
-
-[tool.tox]
+testpaths = [
+  "tests",
+]
