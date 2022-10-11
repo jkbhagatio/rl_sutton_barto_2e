@@ -1,6 +1,7 @@
 """Tests for `test_bandits.py`."""
 
 from itertools import product
+
 import numpy as np
 
 import rl2e.ch2.bandits as bandits

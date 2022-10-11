@@ -4,31 +4,7 @@
 
   - Code up petroleum refinery operation in 1.2 as both an RL and Control task, see how they differ?
 
-- Chapter 2
-
-  - Code up an E-greedy k-armed bandit algorithm with sample-average value estimation [x]
-
-  - Code up an E-greedy k-armed bandit algorithm with weighted-average value estimation
-
-  - Code up an E-greedy k-armed bandit algorithm with weighted-average value estimation with unbiased step size trick
-
-  - Code up a UCB k-armed bandit algorithm with sample-average OR weighted-average value estimation
-
-  - Code up a gradient k-armed bandit algorithm with sample-average OR weighted-average value estimation
-
-
-run_agents(r_all=r_all, action_policy=["E-greedy", "UCB", "gradient"], action_value=)
-
-class where you can save each run outcome (and params) as a row in a pandas df
-___
-
-- installable package & instructions [x]
-- GitHub security and analysis checks: dependabot, CodeQL code scanning [x]
-- python dev config packages: black[x], isort[x], flake8[x] (flake8-docstrings, pydocstyle)--cov-report=html:./tests/test_coverage/test_coverage_report_html, pyupgrade[x], mypy[x], bandit[x], pytest (pytest-cov)[x], pre-commit[x], {tox?}
-- pyproject.toml: black[x], isort[x], flake8[x], mypy[x], bandit[x], pytest[x], {tox?}
-- pre-commit: black, isort, pyupgrade, flake8, mypy, bandit, pytest
-- github actions CI: (flake8, mypy, bandit, pytest --cov, codecov, )
-- add badges for build_env_run_tests and codecov
+- Packaging
 
 - RL frameworks/libraries
   - Acme
@@ -37,8 +13,7 @@ ___
 - RL environments:
   - OpenAI Gym
 
+- To test:
 
-To test:
-  
-  - test Bandit creation and running of all methods with default values.
-  - test Bandit (with n:arms = 5 and n:steps = 1000) running with mix of params
+  - Bandit tests for different param values:
+    - set epsilon to 0 and ensure greedy choice is always run with known seed

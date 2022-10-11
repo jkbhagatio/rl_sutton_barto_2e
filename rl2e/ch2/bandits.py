@@ -1,7 +1,7 @@
 """Sets up and runs bandit tasks."""
 
 from dataclasses import dataclass, field
-from typing import Callable, Union, List  # Mapping, Sequence, Annotated
+from typing import Callable, List, Union  # Mapping, Sequence, Annotated
 
 import numpy as np
 import pandas as pd
