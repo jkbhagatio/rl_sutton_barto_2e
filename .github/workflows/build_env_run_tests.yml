@@ -1,5 +1,5 @@
 # Builds the aeon environment, flakes via flake8, type-checks via mpyp, tests via
-# pytest, reports, test coverage via pytest-cov and codecov, and reports security
+# pytest, reports test coverage via pytest-cov and codecov, and reports security
 # vulnerabilities via bandit.
 
 name: build_env_run_tests
