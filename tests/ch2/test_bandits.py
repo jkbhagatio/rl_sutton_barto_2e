@@ -46,7 +46,7 @@ def test_runs():
     # Run egreedy_sampleavg_params
     b = bandits.Bandit()
     b.action_policy = "e-greedy"
-    b.action_values_est = "sample-average"
+    b.action_value_est = "sample-average"
     b.n_arms = 5
     b.n_steps = 1000
     b.gen_reward_data()
@@ -58,7 +58,7 @@ def test_runs():
     # Run egreedy_weightedavg_params
     b = bandits.Bandit()
     b.action_policy = "e-greedy"
-    b.action_values_est = "weighted-average"
+    b.action_value_est = "weighted-average"
     b.n_arms = 5
     b.n_steps = 1000
     b.gen_reward_data()
@@ -77,7 +77,7 @@ def test_runs():
     # Run gradient_sampleavg_params
     b = bandits.Bandit()
     b.action_policy = "gradient"
-    b.action_values_est = "sample-average"
+    b.action_value_est = "sample-average"
     b.n_arms = 5
     b.n_steps = 1000
     b.gen_reward_data()
@@ -87,7 +87,7 @@ def test_runs():
     # Run gradient_weightedavg_params
     b = bandits.Bandit()
     b.action_policy = "gradient"
-    b.action_values_est = "weighted-average"
+    b.action_value_est = "weighted-average"
     b.n_arms = 5
     b.n_steps = 1000
     b.gen_reward_data()

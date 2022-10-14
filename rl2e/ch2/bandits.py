@@ -11,7 +11,7 @@ from numpy import typing as npt
 from numpy.random import binomial, choice, normal
 
 
-@dataclass
+@dataclass(slots=True)
 class Bandit:
     """An RL Bandit Agent.
 
@@ -21,7 +21,7 @@ class Bandit:
         reward_data: The rewards array [n_steps X n_arms]
         action_policy: The action policy to use. Either "e-greedy" or "gradient".
         e_val: The epsilon value to use with "e-greedy" action policy.
-        action_values_est: The action value estimate to use. Either "sample-average" or
+        action_value_est: The action value estimate to use. Either "sample-average" or
             "weighted-average".
         initial_action_value: The initial action-value estimates to use (by default
             set to 0 for each arm).
@@ -54,25 +54,19 @@ class Bandit:
     use_save_run: bool = True
     use_save_avg_reward: bool = True
     use_save_optimal_action: bool = True
-    __outcome: pd.DataFrame = field(init=False, repr=False)  # saved run outcomes
+    _outcome: pd.DataFrame = field(init=False, repr=False)  # saved run outcomes
     # Action-taken and reward-received vectors, and action values matrix, for all
     # timesteps for the most recent run.
-    __actions: npt.NDArray[np.int_] = field(init=False, repr=False)
-    __rewards: npt.NDArray[np.float64] = field(init=False, repr=False)
-    __action_values: npt.NDArray[np.float64] = field(init=False, repr=False)
+    _actions: npt.NDArray[np.int_] = field(init=False, repr=False)
+    _rewards: npt.NDArray[np.float64] = field(init=False, repr=False)
+    _action_values: npt.NDArray[np.float64] = field(init=False, repr=False)
 
     def __post_init__(self):
         """Initializes some dependent attributes."""
-        columns = list(vars(self).keys())[:-3]
-        columns += [
-            "reward_data",
-            "actions",
-            "rewards",
-            "action_values",
-            "running_avg_reward",
-            "pct_optimal_action",
-        ]
-        self.__outcome = pd.DataFrame(columns=columns)
+        columns = list(filter(lambda x: not x.startswith("__"), self.__slots__))
+        columns += ["running_avg_reward", "pct_optimal_action"]
+        columns.remove("_outcome")
+        self._outcome = pd.DataFrame(columns=columns)
         self.initial_action_value = np.zeros(self.n_arms)
 
     def gen_reward_data(
@@ -108,9 +102,9 @@ class Bandit:
     def run(self):
         """Runs bandit agent on task (reward data)."""
         # Initialize actions, rewards, and action values
-        self.__actions = np.zeros((self.n_steps,))
-        self.__rewards = np.zeros((self.n_steps,))
-        self.__action_values = np.zeros_like(self.reward_data)
+        self._actions = np.zeros((self.n_steps,))
+        self._rewards = np.zeros((self.n_steps,))
+        self._action_values = np.zeros_like(self.reward_data)
         all_actions = np.arange(self.n_arms)  # all possible actions
         q_a = self.initial_action_value.copy()  # action-vals vector (current step)
         n_a = np.zeros(self.n_arms)  # action selected counter vector
@@ -146,47 +140,43 @@ class Bandit:
                 preferred_actions = np.argwhere(h_val == np.max(h_val))
                 action = int(preferred_actions[choice(len(preferred_actions))])
             # Get reward and update action-value.
-            self.__actions[step] = action
-            self.__rewards[step] = reward = self.reward_data[step, action]
+            self._actions[step] = action
+            self._rewards[step] = reward = self.reward_data[step, action]
             if self.action_value_est == "sample-average":
                 n_a[action] += 1
                 alpha = 1 / n_a[action]
+            elif self.action_value_est == "weighted-average":
+                alpha = self.alpha
             if self.use_unbiased_stepsize:
                 alpha = beta / sigma
                 sigma += beta * (1 - sigma)
             if self.action_policy == "e-greedy":
                 q_a[action] += alpha * (reward - q_a[action])
-                self.__action_values[step, :] = q_a
+                self._action_values[step, :] = q_a
             elif self.action_policy == "gradient":
                 policy = np.exp(h_val) / np.sum(np.exp(h_val))  # softmax
                 h_val[action] += (
                     alpha
-                    * (reward - np.mean(self.__rewards[: (step + 1)]))
+                    * (reward - np.mean(self._rewards[: (step + 1)]))
                     * (1 - policy[action])
                 )
                 other_actions = all_actions[all_actions != action]
                 h_val[other_actions] -= (
                     alpha
-                    * (reward - np.mean(self.__rewards[: (step + 1)]))
+                    * (reward - np.mean(self._rewards[: (step + 1)]))
                     * policy[other_actions]
                 )
-                self.__action_values[step, :] = h_val
+                self._action_values[step, :] = h_val
         if self.use_save_run:
             self.save_run()
 
     def save_run(self):
         """Saves the outcome from the most recent run."""
-        run_num = self.__outcome.shape[0]  # row number
-        # add public attributes to df
-        for col in self.__outcome.columns:
+        run_num = self._outcome.shape[0]  # row number
+        # add attributes to df
+        for col in self._outcome.columns:
             if col in dir(self):
-                self.__outcome.loc[run_num, col] = getattr(self, col)
-        # add hidden attributes to df
-        hidden_attribs = list(filter(lambda x: "_Bandit" in x, dir(self)))
-        hidden_attribs.remove("_Bandit__outcome")
-        for a in hidden_attribs:
-            col = a.split("_Bandit__")[-1]
-            self.__outcome.loc[run_num, col] = getattr(self, a)
+                self._outcome.loc[run_num, col] = getattr(self, col)
         # map extra outcomes to their flags and functions
         extra_outcome_fn_map = {
             "running_avg_reward": (
@@ -201,23 +191,23 @@ class Bandit:
         # if flag is true, set column value to function output
         for key, val in extra_outcome_fn_map.items():
             if val[0]:
-                self.__outcome.loc[run_num, key] = val[1]()
+                self._outcome.loc[run_num, key] = val[1]()
 
     def get_outcome(self):
         """Returns the saved run outcomes."""
-        return self.__outcome
+        return self._outcome
 
     def calc_running_avg_reward(self):
         """Calculates running average reward from a reward vector and step window."""
         return (
-            np.convolve(self.__rewards, np.ones((self.step_win,)), mode="same")
+            np.convolve(self._rewards, np.ones((self.step_win,)), mode="same")
             / self.step_win
         )
 
     def calc_optimal_action_pct(self):
         """Calculates % optimal action taken at each time step."""
         oa = np.argmax(np.mean(self.reward_data, axis=0))
-        oa_mask = self.__actions == oa
+        oa_mask = self._actions == oa
         return np.cumsum(oa_mask) / np.arange(
             start=1, stop=(self.reward_data.shape[0] + 1)
         )
