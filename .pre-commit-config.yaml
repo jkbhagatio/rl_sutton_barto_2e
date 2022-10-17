@@ -76,10 +76,25 @@ repos:
 
   - repo: local
     hooks:
-      - id: pytest-check
-        name: pytest-check
+      - id: pytest-py
+        name: pytest-py
         entry: pytest
         language: system
         pass_filenames: false
         args:
           - "-v"
+          - "-n"
+          - "auto"
+
+#  - repo: local
+#    hooks:
+#      - id: pytest-nb
+#        name: pytest-nb
+#        entry: pytest
+#        language: system
+#        pass_filenames: false
+#        args:
+#          - "--nbmake"
+#          - "*/*/*.ipynb"
+#          - "-n"
+#          - "auto"

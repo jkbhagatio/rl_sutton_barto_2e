@@ -1,7 +1,7 @@
 """Sets up and runs bandit tasks."""
 
 from dataclasses import dataclass, field
-from typing import Callable, List, Union  # Mapping, Sequence, Annotated
+from typing import Callable, List, Literal, Union  # Mapping, Sequence, Annotated
 
 import numpy as np
 import pandas as pd
@@ -42,9 +42,9 @@ class Bandit:
     n_arms: int = 10
     n_steps: int = 5000
     reward_data: npt.NDArray[np.float64] = field(init=False, repr=False)
-    action_policy: str = "e-greedy"
+    action_policy: Literal["e-greedy", "gradient"] = "e-greedy"
     e_val: float = 0.1
-    action_value_est: str = "sample-average"
+    action_value_est: Literal["sample-average", "weighted-average"] = "sample-average"
     initial_action_value: npt.NDArray[np.float64] = field(init=False)
     alpha: float = 0.1
     use_unbiased_stepsize: bool = False

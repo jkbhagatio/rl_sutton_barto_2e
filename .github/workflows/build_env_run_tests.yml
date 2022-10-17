@@ -36,14 +36,16 @@ jobs:
         run: python -m mypy .
       - name: bandit
         run: python -m bandit . -r -ll
-      - name: pytest
-        run: python -m pytest tests/
+      - name: pytest-py
+        run: python -m pytest tests/ -n auto
+#      - name: pytest-nb
+#        run: python -m pytest --nbmake */*/*.ipynb -n auto
       # Only run coverage report job and upload for ubuntu.
       - name: generate test coverage report
         if: matrix.os == 'ubuntu-latest'
         run: |
-          python -m pytest --cov=rl2e ./tests/ --cov-report=xml:./tests/test_coverage/test_coverage_report_xml
-          python -m pytest --cov=rl2e ./tests/ --cov-report=html:./tests/test_coverage/test_coverage_report_html
+          python -m pytest -n auto --cov=rl2e ./tests/ --cov-report=xml:./tests/test_coverage/test_coverage_report_xml
+          python -m pytest -n auto --cov=rl2e ./tests/ --cov-report=html:./tests/test_coverage/test_coverage_report_html
       - name: upload test coverage report to codecov
         if: matrix.os == 'ubuntu-latest'
         uses: codecov/codecov-action@v2

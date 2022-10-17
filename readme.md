@@ -29,7 +29,7 @@ pip install -e .
 - Code analysis and testing:
 	- mypy
 	- bandit
-	- pytest (pytest-cov)
+	- pytest (pytest-cov, nbmake, pytest-xdist)
 	- dependabot
 	- CodeQL scanning
 - CI/CD:
