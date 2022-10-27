@@ -64,7 +64,7 @@ class Dp:
         self,
         term_thresh: float = 0.01,
         max_iter_ct: int = 100,
-        est_type: Literal["state-value", "optimal-policy"] = "state-value",
+        est_type: Literal["eval", "iter"] = "eval",
         use_log: bool = True,
     ):
         """Evaluates a policy by updating state values via sweeps through state-space.
@@ -80,10 +80,12 @@ class Dp:
                 state-space before stopping the evaluation algorithm (if consecutive
                 state-values do not converge earlier to some value less than
                 `term_thresh`).
-            est_type: Policy evaluation can be done for either "state-value"
-                estimation, or "optimal-policy" estimation. In the former, state-value
-                updates consider the entire possible action space, while in the latter,
-                state-value updates consider only the action taken by the policy.
+            est_type: Policy evaluation can be done for either "eval"
+                estimation, or "iter" estimation. In the former, we consider
+                evaluation purely for evaluation's sake: state-value updates consider
+                the entire possible action space; in the latter, we consider
+                evaluation for policy iteration: state-value updates consider only
+                the action taken by the policy.
             use_log: If true,
         """
         end_flag = False
@@ -94,7 +96,7 @@ class Dp:
             for state in range(len(self.state_values)):
                 old_val = self.state_values[state]
                 # Compute successor state value term for all possible successor states.
-                if est_type == "state-value":
+                if est_type == "eval":
                     successor_state_set = self.state_action_trans[state]
                     ss_term_vals = np.zeros(self.state_action_trans.shape[1])
                     for i, s_s in enumerate(successor_state_set):
@@ -114,7 +116,7 @@ class Dp:
                     )
                 # Compute successor state value term for only successor states
                 # reachable given the policy's selected action.
-                elif est_type == "optimal-policy":
+                elif est_type == "iter":
                     action = np.where(
                         self.policy_eval(self.policy_probs[state])
                         == self.policy_probs[state]
@@ -181,7 +183,7 @@ class Dp:
         stable = False
         iter_ct = 0
         while (not stable) and (iter_ct < max_iter_ct):
-            self.policy_evaluation(est_type="optimal-policy")
+            self.policy_evaluation(est_type="iter")
             stable = self.policy_improvement()
             iter_ct += 1
 
