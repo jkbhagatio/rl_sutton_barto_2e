@@ -8,6 +8,10 @@
 
   - "Policy" can mean the action(s) taken from state 's', or the "take-probabilities" of each possible action from state 's', and the fact that it can mean either is fucking confusing.
 
+- Chapter 5
+
+  - By default shouldn't we prefer every-visit to first-visit MC?
+
 - Packaging
 
 - RL frameworks/libraries
