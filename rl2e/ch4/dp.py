@@ -185,7 +185,12 @@ class Dp:
             stable = self.policy_improvement()
             iter_ct += 1
 
-    def value_iteration(self, use_log=True):
+    def value_iteration(
+        self,
+        term_thresh: float = 0.01,
+        max_iter_ct: int = 100,
+        use_log: bool = True,
+    ):
         pass
 
     def log(self):
