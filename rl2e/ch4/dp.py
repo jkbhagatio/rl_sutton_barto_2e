@@ -1,6 +1,6 @@
 """Sets up and runs dynamic programming agents and algos."""
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass  # field
 from typing import Callable, Literal  # Mapping, Sequence, Annotated, List, Union
 
 # import ipdb
@@ -45,9 +45,12 @@ class Dp:
     state_values: npt.NDArray[np.float_] = None
     action_values: npt.NDArray[np.float_] = None
     policy_probs: npt.NDArray[np.float_] = None
-    z0: float = 1e-6  # term to avoid division by 0 errors
-    policy_eval: Callable = field(init=False)
-    policy_improve: Callable = lambda x: choice(np.argwhere(x == np.max(x)).flatten())
+    # These policies will find the *action-value* of the policy, we then have to
+    # reverse-index from this value to find the actual action.
+    # By default, `policy_eval` will choose an action from a state weighted by
+    # the relative action-values for all actions from that state.
+    policy_eval: Callable = lambda x: choice(x, p=((np.exp(x)) / np.sum(np.exp(x))))
+    policy_improve: Callable = lambda x: np.max(x)
     gamma: float = 1
 
     def __post_init__(self):
@@ -60,13 +63,10 @@ class Dp:
             self.policy_probs = (
                 np.ones_like(self.action_trans) / self.action_trans.shape[1]
             )
-        # By default, `policy_eval` will choose an action from a state weighted by
-        # the relative action-values for all actions from that state.
-        self.policy_eval = lambda x: choice(x, p=((x + self.z0) / np.sum(x + self.z0)))
 
     def policy_evaluation(
         self,
-        term_thresh: float = 0.01,
+        term_thresh: float = 0.001,
         max_iter_ct: int = 100,
         est_type: Literal["eval", "iter"] = "eval",
         use_log: bool = True,
@@ -144,6 +144,7 @@ class Dp:
                 )
             if (delta < term_thresh) or (iter_ct == max_iter_ct):
                 end_flag = True
+        # ipdb.set_trace()
 
     def policy_improvement(self, use_log: bool = True) -> bool:
         """Improves a policy via greedy action selection.
@@ -157,16 +158,20 @@ class Dp:
         # ipdb.set_trace()
         stable = True
         # Update `policy_probs` based on `action_values`
-        s_a_t, a_v, z0 = self.action_trans, self.action_values, self.z0
-        self.policy_probs = (a_v + z0) / np.tile(
-            np.sum(a_v + z0, axis=1), (s_a_t.shape[1], 1)
-        ).transpose()
+        a_t, a_v, = (
+            self.action_trans,
+            self.action_values,
+        )
+        self.policy_probs = (
+            np.exp(a_v)
+            / np.tile(np.sum(np.exp(a_v), axis=1), (a_t.shape[1], 1)).transpose()
+        )
         # Compute `old_action` and `new_action` from `policy_probs`
         for state in range(len(self.state_values)):
             old_action_val = self.policy_eval(self.policy_probs[state])
-            old_action = np.argmin(np.abs(a_v - old_action_val))
+            old_action = np.argmin(np.abs(self.policy_probs[state] - old_action_val))
             new_action_val = self.policy_improve(self.policy_probs[state])
-            new_action = np.argmin(np.abs(a_v - new_action_val))
+            new_action = np.argmin(np.abs(self.policy_probs[state] - new_action_val))
             if not old_action == new_action:
                 stable = False
                 break
@@ -184,7 +189,7 @@ class Dp:
         stable = False
         iter_ct = 0
         while (not stable) and (iter_ct < max_iter_ct):
-            self.policy_evaluation(est_type="iter")
+            self.policy_evaluation(est_type="eval")
             stable = self.policy_improvement()
             iter_ct += 1
 
