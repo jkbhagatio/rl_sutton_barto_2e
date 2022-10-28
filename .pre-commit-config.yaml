@@ -74,17 +74,17 @@ repos:
         additional_dependencies:
           - "bandit[toml]"
 
-  - repo: local
-    hooks:
-      - id: pytest-py
-        name: pytest-py
-        entry: pytest
-        language: system
-        pass_filenames: false
-        args:
-          - "-v"
-          - "-n"
-          - "auto"
+#  - repo: local
+#    hooks:
+#      - id: pytest-py
+#        name: pytest-py
+#        entry: pytest
+#        language: system
+#        pass_filenames: false
+#        args:
+#          - "-v"
+#          - "-n"
+#          - "auto"
 
 #  - repo: local
 #    hooks:

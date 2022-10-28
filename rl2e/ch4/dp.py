@@ -1,6 +1,6 @@
 """Sets up and runs dynamic programming agents and algos."""
 
-from dataclasses import dataclass  # field
+from dataclasses import dataclass, field
 from typing import Callable, Literal  # Mapping, Sequence, Annotated, List, Union
 
 # import ipdb
@@ -20,14 +20,14 @@ class Dp:
     """Dynamic programming techniques to improve policies.
 
     Attributes:
-        state_action_trans: Possible transitions from each state-action pair to its
+        action_trans: Possible transitions from each state-action pair to its
             possible successor states. Each row represents a state, and each column
             represents the possible actions for that state. Each row-column element
             itself can be an array, which would contain the possible multiple
             successor states accessible from that state-action pair.
-        state_action_trans_p: Probabilities for the transitions in `state_action_trans`.
-        state_action_rewards: Rewards corresponding to the transitions in
-            `state_action_trans`.
+        action_trans_p: Probabilities for the transitions in `action_trans`.
+        action_rewards: Rewards corresponding to the transitions in
+            `action_trans`.
         state_values: State values given the policy.
         action_values: State-action values given the policy.
         policy_probs: The probability of taking each possible action from a given
@@ -39,26 +39,30 @@ class Dp:
         gamma: Reward discounting term.
     """
 
-    state_action_trans: npt.NDArray[np.float_]
-    state_action_trans_p: npt.NDArray[np.float_]
-    state_action_rewards: npt.NDArray[np.float_]
+    action_trans: npt.NDArray[np.float_]
+    action_trans_p: npt.NDArray[np.float_]
+    action_rewards: npt.NDArray[np.float_]
     state_values: npt.NDArray[np.float_] = None
     action_values: npt.NDArray[np.float_] = None
     policy_probs: npt.NDArray[np.float_] = None
-    policy_eval: Callable = lambda x: choice(x, p=((x + 1) / np.sum(x + 1)))
+    z0: float = 1e-6  # term to avoid division by 0 errors
+    policy_eval: Callable = field(init=False)
     policy_improve: Callable = lambda x: choice(np.argwhere(x == np.max(x)).flatten())
     gamma: float = 1
 
     def __post_init__(self):
         """Initializes some dependent attributes."""
         if self.state_values is None:
-            self.state_values = np.zeros(self.state_action_trans.shape[0])
+            self.state_values = np.zeros(self.action_trans.shape[0])
         if self.action_values is None:
-            self.action_values = np.zeros_like(self.state_action_trans)
+            self.action_values = np.zeros_like(self.action_trans)
         if self.policy_probs is None:  # set to equiprobable by default
             self.policy_probs = (
-                np.ones_like(self.state_action_trans) / self.state_action_trans.shape[1]
+                np.ones_like(self.action_trans) / self.action_trans.shape[1]
             )
+        # By default, `policy_eval` will choose an action from a state weighted by
+        # the relative action-values for all actions from that state.
+        self.policy_eval = lambda x: choice(x, p=((x + self.z0) / np.sum(x + self.z0)))
 
     def policy_evaluation(
         self,
@@ -97,45 +101,43 @@ class Dp:
                 old_val = self.state_values[state]
                 # Compute successor state value term for all possible successor states.
                 if est_type == "eval":
-                    successor_state_set = self.state_action_trans[state]
-                    ss_term_vals = np.zeros(self.state_action_trans.shape[1])
+                    successor_state_set = self.action_trans[state]
+                    ss_term_vals = np.zeros(self.action_trans.shape[1])
                     for i, s_s in enumerate(successor_state_set):
                         ss_term_vals[i] = np.sum(
-                            self.state_action_trans_p[state, i]
+                            self.action_trans_p[state, i]
                             * (
-                                self.state_action_rewards[state, i]
+                                self.action_rewards[state, i]
                                 + self.gamma * self.state_values[s_s]
                             )
                         )
                     self.state_values[state] = np.sum(
                         self.policy_probs[state] * ss_term_vals
                     )
-                    self.action_values[state] = self.state_action_trans_p[state] * (
-                        self.state_action_rewards[state]
+                    self.action_values[state] = self.action_trans_p[state] * (
+                        self.action_rewards[state]
                         + self.gamma * self.state_values[successor_state_set]
                     )
                 # Compute successor state value term for only successor states
                 # reachable given the policy's selected action.
                 elif est_type == "iter":
-                    action = np.where(
-                        self.policy_eval(self.policy_probs[state])
-                        == self.policy_probs[state]
-                    )[0]
-                    action = choice(action) if action.size > 1 else action
+                    action_val = self.policy_eval(self.policy_probs[state])
+                    action = np.argwhere(action_val == self.policy_probs[state])
+                    action = choice(action.flatten())
                     self.state_values[state] = np.sum(
-                        self.state_action_trans_p[state, action]
+                        self.action_trans_p[state, action]
                         * (
-                            self.state_action_rewards[state, action]
+                            self.action_rewards[state, action]
                             + self.gamma
-                            * self.state_values[self.state_action_trans[state, action]]
+                            * self.state_values[self.action_trans[state, action]]
                         )
                     )
-                    self.action_values[state, action] = self.state_action_trans_p[
+                    self.action_values[state, action] = self.action_trans_p[
                         state, action
                     ] * (
-                        self.state_action_rewards[state, action]
+                        self.action_rewards[state, action]
                         + self.gamma
-                        * self.state_values[self.state_action_trans[state, action]]
+                        * self.state_values[self.action_trans[state, action]]
                     )
                 delta = np.max(
                     np.abs(np.array((delta, (old_val - self.state_values[state]))))
@@ -154,19 +156,18 @@ class Dp:
         """
         # ipdb.set_trace()
         stable = True
+        # Update `policy_probs` based on `action_values`
+        s_a_t, a_v, z0 = self.action_trans, self.action_values, self.z0
+        self.policy_probs = (a_v + z0) / np.tile(
+            np.sum(a_v + z0, axis=1), (s_a_t.shape[1], 1)
+        ).transpose()
+        # Compute `old_action` and `new_action` from `policy_probs`
         for state in range(len(self.state_values)):
-            old_action = np.where(
-                self.policy_eval(self.action_values[state])
-                == (self.action_values[state] / np.sum(self.action_values[state]))
-            )[0]
-            new_action = np.where(
-                self.policy_improve(self.action_values[state])
-                == (self.action_values[state] / np.sum(self.action_values[state]))
-            )[0]
-            if (
-                self.action_values[state, old_action]
-                == self.action_values[state, new_action]
-            ):
+            old_action_val = self.policy_eval(self.policy_probs[state])
+            old_action = np.argmin(np.abs(a_v - old_action_val))
+            new_action_val = self.policy_improve(self.policy_probs[state])
+            new_action = np.argmin(np.abs(a_v - new_action_val))
+            if not old_action == new_action:
                 stable = False
                 break
         return stable
