@@ -68,6 +68,7 @@ class Dp:
         self,
         term_thresh: float = 0.001,
         max_iter_ct: int = 100,
+        do_value_iter: bool = False,
         use_log: bool = True,
     ):
         """Evaluates a policy by updating state values via sweeps through state-space.
@@ -83,6 +84,8 @@ class Dp:
                 state-space before stopping the evaluation algorithm (if consecutive
                 state-values do not converge earlier to some value less than
                 `term_thresh`).
+            do_value_iter: If True, perform value iteration instead of simple policy
+                evaluation.
             use_log: If true,
         """
         end_flag = False
@@ -103,9 +106,15 @@ class Dp:
                             + self.gamma * self.state_values[s_s]
                         )
                     )
-                self.state_values[state] = np.sum(
-                    self.policy_probs[state] * ss_term_vals
-                )
+                if do_value_iter:
+                    self.state_values[state] = np.max(ss_term_vals)
+                    action = np.argmax(ss_term_vals)
+                    self.policy_probs[state] = 0
+                    self.policy_probs[state, action] = 1
+                else:
+                    self.state_values[state] = np.sum(
+                        self.policy_probs[state] * ss_term_vals
+                    )
                 self.action_values[state] = self.action_trans_p[state] * (
                     self.action_rewards[state]
                     + self.gamma * self.state_values[successor_state_set]
@@ -163,14 +172,6 @@ class Dp:
             self.policy_evaluation()
             stable = self.policy_improvement()
             iter_ct += 1
-
-    def value_iteration(
-        self,
-        term_thresh: float = 0.01,
-        max_iter_ct: int = 100,
-        use_log: bool = True,
-    ):
-        pass
 
     def log(self):
         pass
