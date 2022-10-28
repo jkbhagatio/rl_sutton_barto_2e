@@ -1,7 +1,7 @@
 """Sets up and runs dynamic programming agents and algos."""
 
 from dataclasses import dataclass  # field
-from typing import Callable, Literal  # Mapping, Sequence, Annotated, List, Union
+from typing import Callable  # Literal, Mapping, Sequence, Annotated, List, Union
 
 # import ipdb
 import numpy as np
@@ -68,7 +68,6 @@ class Dp:
         self,
         term_thresh: float = 0.001,
         max_iter_ct: int = 100,
-        est_type: Literal["eval", "iter"] = "eval",
         use_log: bool = True,
     ):
         """Evaluates a policy by updating state values via sweeps through state-space.
@@ -84,12 +83,6 @@ class Dp:
                 state-space before stopping the evaluation algorithm (if consecutive
                 state-values do not converge earlier to some value less than
                 `term_thresh`).
-            est_type: Policy evaluation can be done for either "eval"
-                estimation, or "iter" estimation. In the former, we consider
-                evaluation purely for evaluation's sake: state-value updates consider
-                the entire possible action space; in the latter, we consider
-                evaluation for policy iteration: state-value updates consider only
-                the action taken by the policy.
             use_log: If true,
         """
         end_flag = False
@@ -100,45 +93,23 @@ class Dp:
             for state in range(len(self.state_values)):
                 old_val = self.state_values[state]
                 # Compute successor state value term for all possible successor states.
-                if est_type == "eval":
-                    successor_state_set = self.action_trans[state]
-                    ss_term_vals = np.zeros(self.action_trans.shape[1])
-                    for i, s_s in enumerate(successor_state_set):
-                        ss_term_vals[i] = np.sum(
-                            self.action_trans_p[state, i]
-                            * (
-                                self.action_rewards[state, i]
-                                + self.gamma * self.state_values[s_s]
-                            )
-                        )
-                    self.state_values[state] = np.sum(
-                        self.policy_probs[state] * ss_term_vals
-                    )
-                    self.action_values[state] = self.action_trans_p[state] * (
-                        self.action_rewards[state]
-                        + self.gamma * self.state_values[successor_state_set]
-                    )
-                # Compute successor state value term for only successor states
-                # reachable given the policy's selected action.
-                elif est_type == "iter":
-                    action_val = self.policy_eval(self.policy_probs[state])
-                    action = np.argwhere(action_val == self.policy_probs[state])
-                    action = choice(action.flatten())
-                    self.state_values[state] = np.sum(
-                        self.action_trans_p[state, action]
+                successor_state_set = self.action_trans[state]
+                ss_term_vals = np.zeros(self.action_trans.shape[1])
+                for i, s_s in enumerate(successor_state_set):
+                    ss_term_vals[i] = np.sum(
+                        self.action_trans_p[state, i]
                         * (
-                            self.action_rewards[state, action]
-                            + self.gamma
-                            * self.state_values[self.action_trans[state, action]]
+                            self.action_rewards[state, i]
+                            + self.gamma * self.state_values[s_s]
                         )
                     )
-                    self.action_values[state, action] = self.action_trans_p[
-                        state, action
-                    ] * (
-                        self.action_rewards[state, action]
-                        + self.gamma
-                        * self.state_values[self.action_trans[state, action]]
-                    )
+                self.state_values[state] = np.sum(
+                    self.policy_probs[state] * ss_term_vals
+                )
+                self.action_values[state] = self.action_trans_p[state] * (
+                    self.action_rewards[state]
+                    + self.gamma * self.state_values[successor_state_set]
+                )
                 delta = np.max(
                     np.abs(np.array((delta, (old_val - self.state_values[state]))))
                 )
@@ -189,7 +160,7 @@ class Dp:
         stable = False
         iter_ct = 0
         while (not stable) and (iter_ct < max_iter_ct):
-            self.policy_evaluation(est_type="eval")
+            self.policy_evaluation()
             stable = self.policy_improvement()
             iter_ct += 1
 
