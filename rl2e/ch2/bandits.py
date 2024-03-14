@@ -13,7 +13,7 @@ from numpy.random import binomial, choice, normal
 
 @dataclass(slots=True)
 class Bandit:
-    """An RL Bandit Agent.
+    """An RL Bandit Agent + Environment.
 
     Attributes:
         n_arms: Number of bandit arms.
@@ -168,9 +168,9 @@ class Bandit:
                 )
                 self._action_values[step, :] = h_val
         if self.use_save_run:
-            self.save_run()
+            self.log_run()
 
-    def save_run(self):
+    def log_run(self):
         """Saves the outcome from the most recent run."""
         run_num = self._outcome.shape[0]  # row number
         # add attributes to df

@@ -4,6 +4,10 @@
 
   - Code up petroleum refinery operation in 1.2 as both an RL and Control task, see how they differ?
 
+- Chapter 4
+
+  - "Policy" can mean the action(s) taken from state 's', or the "take-probabilities" of each possible action from state 's', and the fact that it can mean either is fucking confusing.
+
 - Packaging
 
 - RL frameworks/libraries
