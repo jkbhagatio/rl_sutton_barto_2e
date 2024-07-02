@@ -9,7 +9,7 @@ repos:
 #      - id: identity
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.3.0
+    rev: v4.6.0
     hooks:
       - id: check-ast
       - id: check-json
@@ -18,39 +18,39 @@ repos:
       - id: end-of-file-fixer
       - id: trailing-whitespace
 
-  # - repo: https://github.com/psf/black
-  #   rev: 22.10.0
-  #   hooks:
-  #     - id: black
-  #     - id: black-jupyter
-  #       args:
-  #         - "--config"
-  #         - "./pyproject.toml"
+  - repo: https://github.com/psf/black
+    rev: 24.4.2
+    hooks:
+      - id: black
+      - id: black-jupyter
+        args:
+          - "--config"
+          - "./pyproject.toml"
 
-  # - repo: https://github.com/pycqa/isort
-  #   rev: 5.10.1
-  #   hooks:
-  #     - id: isort
-  #       args:
-  #         - "--settings-file"
-  #         - "./pyproject.toml"
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        args:
+          - "--settings-file"
+          - "./pyproject.toml"
 
-  # - repo: https://github.com/asottile/pyupgrade
-  #   rev: v3.1.0
-  #   hooks:
-  #     - id: pyupgrade
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v3.16.0
+    hooks:
+      - id: pyupgrade
 
-  # - repo: https://github.com/PyCQA/flake8
-  #   rev: 5.0.4
-  #   hooks:
-  #     - id: flake8
-  #       args:
-  #         - "--max-line-length"
-  #         - "88"
-  #         - "--extend-exclude"
-  #         - "[.github, .idea, .vs]"
-  #         - "--extend-ignore"
-  #         - "[E201, E202, E203, E731, W503]"
+  - repo: https://github.com/PyCQA/flake8
+    rev: 7.1.0
+    hooks:
+      - id: flake8
+        args:
+          - "--max-line-length"
+          - "88"
+          - "--extend-exclude"
+          - "[.github, .idea, .vs]"
+          - "--extend-ignore"
+          - "[E201, E202, E203, E731, W503]"
 
 # Type-checking, security-checking, and testing via mypy, bandit, and pytest
 # are expensive, so we leave them commented out but here so we can see their set-up.
