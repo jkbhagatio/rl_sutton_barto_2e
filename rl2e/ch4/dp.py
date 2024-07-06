@@ -3,16 +3,9 @@
 from dataclasses import dataclass  # field
 from typing import Callable  # Literal, Mapping, Sequence, Annotated, List, Union
 
-# import ipdb
 import numpy as np
-
-# import pandas as pd
-# import seaborn as sns
-# from matplotlib import pyplot as plt
 from numpy import typing as npt
 from numpy.random import choice
-
-# from scipy import stats
 
 
 @dataclass(slots=True)
@@ -47,8 +40,8 @@ class Dp:
     policy_probs: npt.NDArray[np.float_] = None
     # These policies will find the *action-value* of the policy, we then have to
     # reverse-index from this value to find the actual action.
-    # By default, `policy_eval` will choose an action from a state weighted by
-    # the relative action-values for all actions from that state.
+    # By default, `policy_eval` will choose an action from a state weighted by the
+    # relative action-values for all actions from that state (prob pick from softmax).
     policy_eval: Callable = lambda x: choice(x, p=((np.exp(x)) / np.sum(np.exp(x))))
     policy_improve: Callable = lambda x: np.max(x)
     gamma: float = 1
@@ -86,34 +79,29 @@ class Dp:
                 `term_thresh`).
             do_value_iter: If True, perform value iteration instead of simple policy
                 evaluation.
-            use_log: If true,
+            use_log: If true, return the final `iter_ct` and `delta`.
         """
-        end_flag = False
-        iter_ct = 0
-        while not end_flag:
-            iter_ct += 1
+        for iter_ct in range(max_iter_ct):
             delta = 0
             for state in range(len(self.state_values)):
                 old_val = self.state_values[state]
                 # Compute successor state value term for all possible successor states.
                 successor_state_set = self.action_trans[state]
-                ss_term_vals = np.zeros(self.action_trans.shape[1])
-                for i, s_s in enumerate(successor_state_set):
-                    ss_term_vals[i] = np.sum(
+                s_s_term_vals = np.zeros(self.action_trans.shape[1])
+                for i, s_s in enumerate(successor_state_set):  # async, sequential
+                    s_s_term_vals[i] = np.sum(
                         self.action_trans_p[state, i]
                         * (
                             self.action_rewards[state, i]
                             + self.gamma * self.state_values[s_s]
                         )
                     )
+                # Update state and action values.
                 if do_value_iter:
-                    self.state_values[state] = np.max(ss_term_vals)
-                    action = np.argmax(ss_term_vals)
-                    self.policy_probs[state] = 0
-                    self.policy_probs[state, action] = 1
+                    self.state_values[state] = np.max(s_s_term_vals)
                 else:
                     self.state_values[state] = np.sum(
-                        self.policy_probs[state] * ss_term_vals
+                        self.policy_probs[state] * s_s_term_vals
                     )
                 self.action_values[state] = self.action_trans_p[state] * (
                     self.action_rewards[state]
@@ -122,31 +110,25 @@ class Dp:
                 delta = np.max(
                     np.abs(np.array((delta, (old_val - self.state_values[state]))))
                 )
-            if (delta < term_thresh) or (iter_ct == max_iter_ct):
-                end_flag = True
-        # ipdb.set_trace()
+            if delta < term_thresh:
+                break
+        if use_log:
+            return iter_ct, delta
 
-    def policy_improvement(self, use_log: bool = True) -> bool:
+    def policy_improvement(self) -> bool:
         """Improves a policy via greedy action selection.
-
-        Args:
-            use_log: If True,
 
         Returns:
             stable: If True, no more policy improvement can occur.
         """
-        # ipdb.set_trace()
-        stable = True
-        # Update `policy_probs` based on `action_values`
-        a_t, a_v, = (
-            self.action_trans,
-            self.action_values,
-        )
+        # Update `policy_probs` based on softmax of `action_values`.
+        a_t, a_v = self.action_trans, self.action_values
         self.policy_probs = (
             np.exp(a_v)
             / np.tile(np.sum(np.exp(a_v), axis=1), (a_t.shape[1], 1)).transpose()
         )
-        # Compute `old_action` and `new_action` from `policy_probs`
+        # Compute `old_action` and `new_action` from `policy_probs`.
+        stable = True
         for state in range(len(self.state_values)):
             old_action_val = self.policy_eval(self.policy_probs[state])
             old_action = np.argmin(np.abs(self.policy_probs[state] - old_action_val))
@@ -157,21 +139,19 @@ class Dp:
                 break
         return stable
 
-    def policy_iteration(self, max_iter_ct=100, use_log=True):
+    def policy_iteration(self, max_iter_ct: int = 100, eval_params: dict | None = None):
         """Runs policy iteration via chain of evaluation and improvement.
 
         Args:
-            max_iter_ct: The maximum number of iterations to perform through the entire
-                state-space before stopping the evaluation algorithm.
-            use_log: If True,
+            max_iter_ct: The maximum number of iterations of policy evaluation followed
+                by policy improvement.
+            eval_params: Parameters to pass to `policy_evaluation()`.
         """
-        # ipdb.set_trace()
+        if eval_params is None:
+            eval_params = {}
         stable = False
         iter_ct = 0
         while (not stable) and (iter_ct < max_iter_ct):
-            self.policy_evaluation()
+            self.policy_evaluation(**eval_params)
             stable = self.policy_improvement()
             iter_ct += 1
-
-    def log(self):
-        pass
